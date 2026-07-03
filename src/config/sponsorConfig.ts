@@ -9,7 +9,7 @@ export const sponsorConfig: SponsorConfig = {
 
 	// 打赏用途说明
 	usage:
-		"您的打赏将用于服务器维护、内容创作和功能开发，帮助我持续提供优质内容。",
+		"谢谢支持(｀・ω・´)！",
 
 	// 是否显示打赏者列表
 	showSponsorsList: true,
@@ -40,18 +40,10 @@ export const sponsorConfig: SponsorConfig = {
 			enabled: true,
 		},
 		{
-			name: "ko-fi",
-			icon: "simple-icons:kofi",
-			qrCode: "",
-			link: "https://ko-fi.com/cuteleaf",
-			description: "Buy a Coffee for Firefly",
-			enabled: true,
-		},
-		{
 			name: "爱发电",
 			icon: "simple-icons:afdian",
 			qrCode: "",
-			link: "https://ifdian.net/a/cuteleaf",
+			link: "https://ifdian.net/a/yoruaoi",
 			description: "通过 爱发电 进行打赏",
 			enabled: true,
 		},
