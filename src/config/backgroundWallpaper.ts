@@ -77,17 +77,18 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			// 是否允许用户通过控制面板切换横幅标题显示
 			switchable: true,
 			// 主页横幅主标题
-			title: "Lovely firefly!",
+			title: "Welcome to AoiBlog",
 			// 主页横幅主标题字体大小
 			titleSize: "3.8rem",
 			// 主页横幅副标题
 			subtitle: [
-				"In Reddened Chrysalis, I Once Rest",
-				"From Shattered Sky, I Free Fall",
-				"Amidst Silenced Stars, I Deep Sleep",
-				"Upon Lighted Fyrefly, I Soon Gaze",
-				"From Undreamt Night, I Thence Shine",
-				"In Finalized Morrow, I Full Bloom",
+				"世界线变动率：1.048596%",
+				"无论之后发生了什么，请不要后悔与我相遇。",
+				"EL PSY CONGROO.",
+				"你驻足于春色中，于那独一无二的春色之中。",
+				"告诉他们，我度过了极好的一生。",
+				"我们的头脑比天空更辽阔，比大海更深邃。",
+				"唯有那份炫目，未曾忘却。",
 			],
 			// 主页横幅副标题字体大小
 			subtitleSize: "1.5rem",
