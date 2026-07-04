@@ -4,7 +4,7 @@ published: 2026-07-03
 description: '13本学习教材资源分享和建议'
 image: ./images/cover2.avif
 tags: ["资源分享", "c语言", "嵌入式", "Linux"]
-category: "技术,资源分享"
+category: "技术;资源分享"
 draft: false
 lang: zh_CN
 ---
