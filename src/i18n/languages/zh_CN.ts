@@ -380,6 +380,12 @@ export const zh_CN: Translation = {
 	[Key.passwordError]: "密码错误，请重试。",
 	[Key.passwordProtectedRss]: "本文已加密保护，请访问网站查看。",
 
+	// Umami 统计卡片
+	[Key.umamiStats]: "统计",
+	[Key.umamiTotalPageviews]: "总浏览量",
+	[Key.umamiVisits]: "访问数",
+	[Key.umamiVisitors]: "游客数",
+
 	// 背景视频播放器
 	[Key.videoPlay]: "播放背景视频",
 	[Key.videoPause]: "暂停背景视频",

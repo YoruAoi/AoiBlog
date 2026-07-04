@@ -382,6 +382,12 @@ export const zh_TW: Translation = {
 	[Key.passwordError]: "密碼錯誤，請重試。",
 	[Key.passwordProtectedRss]: "本文已加密保護，請訪問網站查看。",
 
+	// Umami 統計卡片
+	[Key.umamiStats]: "統計",
+	[Key.umamiTotalPageviews]: "總瀏覽量",
+	[Key.umamiVisits]: "訪問數",
+	[Key.umamiVisitors]: "遊客數",
+
 	// 背景影片播放器
 	[Key.videoPlay]: "播放背景影片",
 	[Key.videoPause]: "暫停背景影片",

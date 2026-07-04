@@ -393,6 +393,12 @@ export const ru: Translation = {
 	[Key.passwordProtectedRss]:
 		"Эта статья зашифрована. Пожалуйста, посетите сайт для просмотра.",
 
+	// Umami Статистика
+	[Key.umamiStats]: "Статистика",
+	[Key.umamiTotalPageviews]: "Всего просмотров",
+	[Key.umamiVisits]: "Визиты",
+	[Key.umamiVisitors]: "Посетители",
+
 	// Фоновый видеоплеер
 	[Key.videoPlay]: "Воспроизвести фоновое видео",
 	[Key.videoPause]: "Пауза фонового видео",

@@ -391,6 +391,12 @@ export const en: Translation = {
 	[Key.passwordProtectedRss]:
 		"This article is encrypted. Please visit the website to view it.",
 
+	// Umami Stats Card
+	[Key.umamiStats]: "Stats",
+	[Key.umamiTotalPageviews]: "Total Pageviews",
+	[Key.umamiVisits]: "Visits",
+	[Key.umamiVisitors]: "Visitors",
+
 	// Background video player
 	[Key.videoPlay]: "Play background video",
 	[Key.videoPause]: "Pause background video",

@@ -390,6 +390,12 @@ export const ja: Translation = {
 	[Key.passwordProtectedRss]:
 		"この記事は暗号化されています。ウェブサイトにアクセスしてご覧ください。",
 
+	// Umami 統計カード
+	[Key.umamiStats]: "統計",
+	[Key.umamiTotalPageviews]: "総ページビュー",
+	[Key.umamiVisits]: "訪問数",
+	[Key.umamiVisitors]: "訪問者数",
+
 	// 背景動画プレイヤー
 	[Key.videoPlay]: "背景動画を再生",
 	[Key.videoPause]: "背景動画を一時停止",

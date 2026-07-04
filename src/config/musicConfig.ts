@@ -50,10 +50,10 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	local: {
 		playlist: [
 			{
-				name: "地球上最后一个EMo男孩",
+				name: "地球上最后一个EMO男孩",
 				artist: "Chinese Football",
 				url: "/assets/music/地球上最后一个EMO男孩.mp3",
-				cover: "/assets/music/cover/109951169585655912.webp",
+				cover: "/assets/music/cover/地球上最后一个EMO男孩.webp",
 				lrc: "",
 			},
 			{

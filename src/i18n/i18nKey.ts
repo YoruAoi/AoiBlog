@@ -382,6 +382,12 @@ enum I18nKey {
 	videoPrev = "videoPrev",
 	videoNext = "videoNext",
 	videoLoadError = "videoLoadError",
+
+	// Umami 统计卡片
+	umamiStats = "umamiStats",
+	umamiTotalPageviews = "umamiTotalPageviews",
+	umamiVisits = "umamiVisits",
+	umamiVisitors = "umamiVisitors",
 }
 
 export default I18nKey;
