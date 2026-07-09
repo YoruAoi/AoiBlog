@@ -6,7 +6,7 @@ image: ./images/cover2.avif
 tags: ["资源分享", "c语言", "嵌入式", "Linux"]
 category: "技术;资源分享"
 draft: false
-lang: zh_CN
+lang: ''
 ---
 
 每一本的文字都可复制编辑，清晰可见。豆包网盘链接：[text](https://feishu.doubao.com/drive/shr/KnY5fz5OnlWq0FdOrnjcF8konrd)
