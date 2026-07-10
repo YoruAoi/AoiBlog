@@ -1,3 +1,13 @@
+---
+title: 全国计算机等级考试Linux应用与开发技术题库
+published: 2026-07-04
+description: '考试题库'
+image: ''
+tags: [计算机等级考试,Linux]
+category: '技术;题库'
+draft: false 
+lang: ''
+---
 # 全国计算机等级考试Linux应用与开发技术试题（一）
 
 ## 一、单项选择题（共 40 题）
