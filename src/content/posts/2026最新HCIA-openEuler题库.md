@@ -1,5 +1,5 @@
 ---
-title: 2026最新HCIA-open'Elue
+title: 2026最新HCIA-openEuler题库
 published: 2026-07-04
 description: 'HCIA欧拉方向考试题库'
 image: ''

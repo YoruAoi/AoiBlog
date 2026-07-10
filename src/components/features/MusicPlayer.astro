@@ -100,6 +100,11 @@ const widgetId =
     </div>
 </div>
 
+<!-- Audio Visualization -->
+<div class="visualizer-container w-full h-9 px-1 mb-1">
+    <canvas class="visualizer-canvas w-full h-full block" aria-hidden="true"></canvas>
+</div>
+
 <!-- Controls Row -->
 <div class="flex items-center justify-between px-1 select-none">
     <!-- Repeat Mode -->
@@ -700,12 +705,130 @@ const widgetId =
         mgr.setVolume(val);
     });
 
-    ui.progressContainer.addEventListener('click', function (e) {
+    // ── Drag-to-seek ──────────────────────────────────────────
+    var isDragging = false;
+
+    function getPointerX(e) {
+        return e.touches ? e.touches[0].clientX : e.clientX;
+    }
+
+    function onSeekStart(e) {
+        isDragging = true;
+        ui.progressBar.style.transition = 'none';
+        ui.progressThumb.style.transition = 'none';
+        onSeekUpdate(e);
+        e.preventDefault();
+    }
+
+    function onSeekUpdate(e) {
+        if (!isDragging) return;
         var rect = ui.progressContainer.getBoundingClientRect();
-        var clickX = e.clientX - rect.left;
-        var percent = Math.min(Math.max(clickX / rect.width, 0), 1);
+        var x = getPointerX(e) - rect.left;
+        var percent = Math.min(Math.max(x / rect.width, 0), 1);
+        ui.progressBar.style.width = (percent * 100) + '%';
+        ui.progressThumb.style.left = (percent * 100) + '%';
+        ui.progressContainer.setAttribute('aria-valuenow', Math.round(percent * 100).toString());
         mgr.seek(percent);
-    });
+        e.preventDefault();
+    }
+
+    function onSeekEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        ui.progressBar.style.transition = '';
+        ui.progressThumb.style.transition = '';
+        var s = mgr.getState();
+        if (s.duration > 0) {
+            ui.progressBar.style.width = s.progress + '%';
+            ui.progressThumb.style.left = s.progress + '%';
+            ui.progressContainer.setAttribute('aria-valuenow', Math.round(s.progress).toString());
+        }
+    }
+
+    ui.progressContainer.addEventListener('mousedown', onSeekStart);
+    document.addEventListener('mousemove', onSeekUpdate);
+    document.addEventListener('mouseup', onSeekEnd);
+
+    ui.progressContainer.addEventListener('touchstart', onSeekStart, { passive: false });
+    document.addEventListener('touchmove', onSeekUpdate, { passive: false });
+    document.addEventListener('touchend', onSeekEnd);
+
+    // ── Audio Visualization ────────────────────────────────────
+    var visCanvas = widget.querySelector('.visualizer-canvas');
+    var visContainer = widget.querySelector('.visualizer-container');
+    var visCtx = visCanvas ? visCanvas.getContext('2d') : null;
+    var visRaf = null;
+    var visBars = new Float32Array(48);
+    var visData = new Uint8Array(128);
+    var visResizeObserver = null;
+
+    if (visCanvas && visCtx) {
+        function visResize() {
+            var dpr = window.devicePixelRatio || 1;
+            var cssW = visContainer.clientWidth;
+            var cssH = visContainer.clientHeight;
+            visCanvas.width = cssW * dpr;
+            visCanvas.height = cssH * dpr;
+        }
+
+        function visDraw() {
+            visRaf = requestAnimationFrame(visDraw);
+
+            var isVisible = typeof visCanvas.checkVisibility === 'function'
+                ? visCanvas.checkVisibility()
+                : visCanvas.offsetParent !== null;
+            if (!isVisible) return;
+
+            var dpr = window.devicePixelRatio || 1;
+            var w = visCanvas.width / dpr;
+            var h = visCanvas.height / dpr;
+            if (w === 0 || h === 0) return;
+
+            var analyser = mgr.getAnalyser();
+            var state = mgr.getState();
+
+            visCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            visCtx.clearRect(0, 0, w, h);
+
+            var barCount = 48;
+            var gap = 1.5;
+            var barW = (w - (barCount - 1) * gap) / barCount;
+            if (barW <= 0) return;
+
+            if (analyser && state.isPlaying) {
+                analyser.getByteFrequencyData(visData);
+            }
+
+            var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#6366f1';
+
+            for (var i = 0; i < barCount; i++) {
+                var target = analyser && state.isPlaying ? visData[i] / 255 : 0;
+                visBars[i] += (target - visBars[i]) * 0.35;
+                var barH = Math.max(visBars[i] * h, 0.5);
+                var alpha = 0.2 + visBars[i] * 0.8;
+
+                visCtx.globalAlpha = Math.min(alpha, 1);
+                visCtx.fillStyle = primaryColor;
+                visCtx.fillRect(i * (barW + gap), h - barH, barW, barH);
+            }
+
+            visCtx.globalAlpha = 1;
+        }
+
+        visResize();
+
+        var visResizeTimer;
+        function visOnResize() {
+            clearTimeout(visResizeTimer);
+            visResizeTimer = setTimeout(visResize, 100);
+        }
+        window.addEventListener('resize', visOnResize);
+
+        visResizeObserver = new ResizeObserver(function () { visResize(); });
+        visResizeObserver.observe(visContainer);
+
+        visDraw();
+    }
 
     // ── Drawer logic (local state) ───────────────────────────
     ui.btnLrc.addEventListener('click', function () {
@@ -821,12 +944,19 @@ const widgetId =
             for (var j = 0; j < removed.length; j++) {
                 if (removed[j] === widget || (removed[j].contains && removed[j].contains(widget))) {
                     // Widget removed from DOM – clean up event listeners
-                    Object.keys(handlers).forEach(function (name) {
-                        window.removeEventListener(name, handlers[name]);
-                    });
-                    observer.disconnect();
-                    clearTimeout(local.scrollTimeout);
-                    return;
+                Object.keys(handlers).forEach(function (name) {
+                    window.removeEventListener(name, handlers[name]);
+                });
+                observer.disconnect();
+                clearTimeout(local.scrollTimeout);
+                if (visRaf) cancelAnimationFrame(visRaf);
+                if (visResizeObserver) visResizeObserver.disconnect();
+                document.removeEventListener('mousemove', onSeekUpdate);
+                document.removeEventListener('mouseup', onSeekEnd);
+                document.removeEventListener('touchmove', onSeekUpdate);
+                document.removeEventListener('touchend', onSeekEnd);
+                window.removeEventListener('resize', visOnResize);
+                return;
                 }
             }
         }
@@ -849,6 +979,14 @@ const widgetId =
 </script>
 
 <style>
+    .visualizer-container {
+        overflow: hidden;
+    }
+    .visualizer-canvas {
+        display: block;
+        border-radius: 6px;
+    }
+
     @keyframes spin-slow {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
