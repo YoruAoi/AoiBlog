@@ -15,6 +15,13 @@ const config = musicPlayerConfig;
 
 const viewConfigStr = JSON.stringify({
 	showLyrics: config.showLyrics ?? true,
+	visualizer: {
+		barCount: config.visualizer?.barCount ?? 32,
+		smoothing: config.visualizer?.smoothing ?? 0.15,
+		attackSpeed: config.visualizer?.attackSpeed ?? 0.4,
+		gradient: config.visualizer?.gradient ?? true,
+		mirror: config.visualizer?.mirror ?? true,
+	},
 	i18n: {
 		noPlaying: i18n(I18nKey.musicNoPlaying),
 		lyrics: i18n(I18nKey.musicLyrics),
@@ -753,31 +760,61 @@ const widgetId =
     document.addEventListener('touchmove', onSeekUpdate, { passive: false });
     document.addEventListener('touchend', onSeekEnd);
 
-    // ── Audio Visualization ────────────────────────────────────
+    // ── Audio Visualization (cava-style stereo: center=low, edges=high) ──
     var visCanvas = widget.querySelector('.visualizer-canvas');
     var visContainer = widget.querySelector('.visualizer-container');
     var visCtx = visCanvas ? visCanvas.getContext('2d') : null;
     var visRaf = null;
-    var visBars = new Float32Array(48);
-    var visData = new Uint8Array(128);
+    var visBars = null;
+    var visData = null;
     var visResizeObserver = null;
+
+    var visCfg = cfg.visualizer || {};
+    var BAR_COUNT = (visCfg.barCount || 6) & ~1;
+    var HALF = BAR_COUNT / 2;
+    var ATTACK = visCfg.attackSpeed || 0.3;
+    var DECAY = visCfg.smoothing || 0.08;
+    var GAIN = 2.2; // amplify bar height for quiet audio
+    var USE_GRADIENT = visCfg.gradient !== false;
 
     if (visCanvas && visCtx) {
         function visResize() {
             var dpr = window.devicePixelRatio || 1;
-            var cssW = visContainer.clientWidth;
-            var cssH = visContainer.clientHeight;
-            visCanvas.width = cssW * dpr;
-            visCanvas.height = cssH * dpr;
+            visCanvas.width = visContainer.clientWidth * dpr;
+            visCanvas.height = visContainer.clientHeight * dpr;
         }
+
+        // Build log-spaced bin mapping for one side (HALF bars)
+        function buildLogBins(fftSize, halfCount) {
+            var bins = [];
+            var minFreq = 30;
+            var maxFreq = fftSize / 2;
+            var logMin = Math.log(minFreq);
+            var logMax = Math.log(maxFreq);
+            for (var i = 0; i < halfCount; i++) {
+                var f0 = Math.exp(logMin + (logMax - logMin) * (i / halfCount));
+                var f1 = Math.exp(logMin + (logMax - logMin) * ((i + 1) / halfCount));
+                var binStart = Math.max(1, Math.floor(f0));
+                var binEnd = Math.min(maxFreq, Math.ceil(f1));
+                bins.push({ start: binStart, end: Math.max(binEnd, binStart + 1) });
+            }
+            return bins;
+        }
+
+        var logBins = null;
+
+        // Read --hue once at init (e.g. 45 = golden)
+        var _hue = (function () {
+            var s = getComputedStyle(document.documentElement).getPropertyValue('--hue').trim();
+            return s ? parseInt(s) : 45;
+        })();
 
         function visDraw() {
             visRaf = requestAnimationFrame(visDraw);
 
-            var isVisible = typeof visCanvas.checkVisibility === 'function'
-                ? visCanvas.checkVisibility()
-                : visCanvas.offsetParent !== null;
-            if (!isVisible) return;
+            if (typeof visCanvas.checkVisibility === 'function'
+                ? !visCanvas.checkVisibility()
+                : visCanvas.offsetParent === null) return;
 
             var dpr = window.devicePixelRatio || 1;
             var w = visCanvas.width / dpr;
@@ -787,46 +824,75 @@ const widgetId =
             var analyser = mgr.getAnalyser();
             var state = mgr.getState();
 
+            // Lazy-init
+            var binCount = analyser ? analyser.frequencyBinCount : 256;
+            if (!visBars || visBars.length !== BAR_COUNT) visBars = new Float32Array(BAR_COUNT);
+            if (!visData || visData.length !== binCount) visData = new Uint8Array(binCount);
+            if (!logBins || logBins.length !== HALF) logBins = buildLogBins(binCount * 2, HALF);
+
             visCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
             visCtx.clearRect(0, 0, w, h);
 
-            var barCount = 48;
             var gap = 1.5;
-            var barW = (w - (barCount - 1) * gap) / barCount;
+            var barW = (w - (BAR_COUNT - 1) * gap) / BAR_COUNT;
             if (barW <= 0) return;
 
+            // Read FFT data
             if (analyser && state.isPlaying) {
                 analyser.getByteFrequencyData(visData);
             }
 
-            var primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#6366f1';
+            // Stereo center-out: low freqs in middle, high freqs on edges
+            for (var i = 0; i < HALF; i++) {
+                var target = 0;
+                if (analyser && state.isPlaying) {
+                    var bin = logBins[i];
+                    var maxVal = 0;
+                    for (var b = bin.start; b < bin.end && b < visData.length; b++) {
+                        if (visData[b] > maxVal) maxVal = visData[b];
+                    }
+                    target = Math.min(maxVal / 255 * GAIN, 1);
+                }
 
-            for (var i = 0; i < barCount; i++) {
-                var target = analyser && state.isPlaying ? visData[i] / 255 : 0;
-                visBars[i] += (target - visBars[i]) * 0.35;
-                var barH = Math.max(visBars[i] * h, 0.5);
-                var alpha = 0.2 + visBars[i] * 0.8;
+                // Left side: index 0 (far left) = highest freq, index HALF-1 (center-left) = lowest freq
+                // Right side: index HALF (center-right) = lowest freq, index BAR_COUNT-1 (far right) = highest freq
+                var leftIdx = HALF - 1 - i;
+                var rightIdx = HALF + i;
 
-                visCtx.globalAlpha = Math.min(alpha, 1);
-                visCtx.fillStyle = primaryColor;
-                visCtx.fillRect(i * (barW + gap), h - barH, barW, barH);
+                // Attack/decay per channel
+                for (var side = 0; side < 2; side++) {
+                    var idx = side === 0 ? leftIdx : rightIdx;
+                    var speed = target > visBars[idx] ? ATTACK : DECAY;
+                    visBars[idx] += (target - visBars[idx]) * speed;
+                    if (visBars[idx] < 0.005) visBars[idx] = 0;
+                }
             }
 
-            visCtx.globalAlpha = 1;
+            var hue = _hue;
+            var barMaxH = h * 0.98;
+
+            for (var i = 0; i < BAR_COUNT; i++) {
+                var barH = Math.max(visBars[i] * barMaxH, 0.5);
+                var x = gap + i * (barW + gap);
+                var y = h - barH;
+
+                var alpha = 0.35 + visBars[i] * 0.65;
+                visCtx.fillStyle = 'hsla(' + hue + ',70%,55%,' + alpha + ')';
+
+                // Square bar (no rounded corners)
+                visCtx.fillRect(x, y, barW, barH);
+            }
         }
 
         visResize();
-
         var visResizeTimer;
         function visOnResize() {
             clearTimeout(visResizeTimer);
             visResizeTimer = setTimeout(visResize, 100);
         }
         window.addEventListener('resize', visOnResize);
-
         visResizeObserver = new ResizeObserver(function () { visResize(); });
         visResizeObserver.observe(visContainer);
-
         visDraw();
     }
 

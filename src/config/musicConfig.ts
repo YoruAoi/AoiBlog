@@ -48,10 +48,24 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	local: {
 		playlist: [
 			{
+				name: "漂流人间",
+				artist: "Chinese Football",
+				url: "/assets/music/漂流人间.mp3",
+				cover: "/assets/music/cover/漂流人间.webp",
+				lrc: "",
+			},
+			{
 				name: "地球上最后一个EMO男孩",
 				artist: "Chinese Football",
 				url: "/assets/music/地球上最后一个EMO男孩.mp3",
 				cover: "/assets/music/cover/地球上最后一个EMO男孩.webp",
+				lrc: "",
+			},
+			{
+				name: "Never Meant",
+				artist: "American Football",
+				url: "/assets/music/Never Meant.mp3",
+				cover: "/assets/music/cover/Never Meant.webp",
 				lrc: "",
 			},
 			{
@@ -69,5 +83,19 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 				lrc: "",
 			},
 		],
+	},
+
+	// 音频可视化配置
+	visualizer: {
+		// 频谱条数量
+		barCount: 32,
+		// 衰减系数（越小回落越快）
+		smoothing: 0.15,
+		// 上升速度（越大响应越快）
+		attackSpeed: 0.4,
+		// 是否启用垂直渐变色
+		gradient: true,
+		// 是否显示底部镜像反射
+		mirror: true,
 	},
 };

@@ -49,4 +49,13 @@ export type MusicPlayerConfig = {
 			lrc?: string; // 歌词内容，支持 LRC 格式
 		}>;
 	};
+
+	// 音频可视化配置
+	visualizer?: {
+		barCount?: number; // 频谱条数量，默认 32
+		smoothing?: number; // 衰减系数（越小回落越快），默认 0.15
+		attackSpeed?: number; // 上升速度（越大响应越快），默认 0.4
+		gradient?: boolean; // 是否启用垂直渐变色，默认 true
+		mirror?: boolean; // 是否显示底部镜像反射，默认 true
+	};
 };

@@ -114,7 +114,10 @@ const managerConfigStr = JSON.stringify({
             var ACtor = window.AudioContext || window['webkitAudioContext'];
             audioCtx = new ACtor();
             analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256;
+            analyser.fftSize = 512;
+            analyser.smoothingTimeConstant = 0;
+            analyser.minDecibels = -90;
+            analyser.maxDecibels = -10;
             var source = audioCtx.createMediaElementSource(audio);
             source.connect(analyser);
             analyser.connect(audioCtx.destination);
